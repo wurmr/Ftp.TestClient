@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ftp.TestClient", "Ftp.TestClient.csproj", "{4556DFB6-AF40-48F6-B248-4564C7DDE09E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ftp.TestClient", "Ftp.TestClient\Ftp.TestClient.csproj", "{4556DFB6-AF40-48F6-B248-4564C7DDE09E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{90D94F39-0CA8-4731-BECA-CF44092BA824}"
 	ProjectSection(SolutionItems) = preProject
@@ -23,8 +23,5 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal
