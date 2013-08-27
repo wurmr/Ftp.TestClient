@@ -18,7 +18,8 @@ namespace Ftp.TestClient
 
         static void Main(string[] args)
         {
-            var timer = new System.Threading.Timer(Execute, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+            var testFrequencyInSeconds = int.Parse(ConfigurationManager.AppSettings["TestFrequencyInSeconds"]);
+            var timer = new System.Threading.Timer(Execute, null, TimeSpan.Zero, TimeSpan.FromSeconds(testFrequencyInSeconds));
 
             // Wait for input to exit.
             Console.ReadLine();
@@ -51,9 +52,8 @@ namespace Ftp.TestClient
             // Get the object used to communicate with the server.
             var request = (FtpWebRequest)WebRequest.Create(String.Format("{0}{1}/{2}", serverAddress, uploadDirectory, fileName));
             request.Method = WebRequestMethods.Ftp.UploadFile;
-
-            // This example assumes the FTP site uses anonymous logon.
-            request.Credentials = new NetworkCredential ("anonymous","a@b.c");
+            request.KeepAlive = false;
+            request.Credentials = new NetworkCredential(ConfigurationManager.AppSettings["FtpUserName"], ConfigurationManager.AppSettings["FtpPassword"]);
             
             request.ContentLength = fileContents.Length;
 
@@ -75,10 +75,8 @@ namespace Ftp.TestClient
             // Get the object used to communicate with the server.
             var request = (FtpWebRequest)WebRequest.Create(String.Format("{0}{1}/{2}", serverAddress, uploadDirectory, fileName));
             request.Method = WebRequestMethods.Ftp.DownloadFile;
-
-            // This example assumes the FTP site uses anonymous logon.
-            request.Credentials = new NetworkCredential("anonymous", "a@b.c");
-
+            request.KeepAlive = false;
+            request.Credentials = new NetworkCredential(ConfigurationManager.AppSettings["FtpUserName"], ConfigurationManager.AppSettings["FtpPassword"]);
             var response = (FtpWebResponse)request.GetResponse();
 
             var responseStream = response.GetResponseStream();
