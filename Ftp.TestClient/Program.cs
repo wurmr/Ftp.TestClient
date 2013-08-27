@@ -4,22 +4,38 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using NLog;
+ 
+
 
 namespace Ftp.TestClient
 {
     class Program
     {
+        static Logger logger = LogManager.GetCurrentClassLogger();
+
         static void Main(string[] args)
         {
-            DownloadFile();
-            Console.ReadLine();
+            var timer = new System.Threading.Timer(Execute, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
 
-            UploadFile();
+            // Wait for input to exit.
             Console.ReadLine();
+        }
 
-            ListContents();
-            Console.ReadLine();
+        private static void Execute(object state)
+        {
+            try
+            {
+                DownloadFile();
+                UploadFile();
+                //ListContents();
+            }
+            catch (Exception e)
+            {
+                logger.Error(e);
+            }
         }
 
         private static void ListContents()
@@ -35,9 +51,10 @@ namespace Ftp.TestClient
 
             Stream responseStream = response.GetResponseStream();
             StreamReader reader = new StreamReader(responseStream);
-            Console.WriteLine(reader.ReadToEnd());
+            logger.Debug(reader.ReadToEnd());
 
-            Console.WriteLine("Directory List Complete, status {0}", response.StatusDescription);
+            logger.Info("Directory List Complete, status {0}", response.StatusDescription);
+            //Console.WriteLine("Directory List Complete, status {0}", response.StatusDescription);
 
             reader.Close();
             response.Close();
@@ -45,8 +62,9 @@ namespace Ftp.TestClient
 
         private static void UploadFile()
         {
+            var random = new Random();
             // Get the object used to communicate with the server.
-            FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://localhost/test.upload.txt");
+            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(String.Format("ftp://localhost/test.{0}.upload.txt", random.Next().ToString()));
             request.Method = WebRequestMethods.Ftp.UploadFile;
 
             // This example assumes the FTP site uses anonymous logon.
@@ -64,7 +82,7 @@ namespace Ftp.TestClient
 
             FtpWebResponse response = (FtpWebResponse)request.GetResponse();
     
-            Console.WriteLine("Upload File Complete, status {0}", response.StatusDescription);
+            logger.Info("Upload File Complete, status {0}", response.StatusDescription);
     
             response.Close();
         }
@@ -84,7 +102,7 @@ namespace Ftp.TestClient
             var reader = new StreamReader(responseStream);
             Console.WriteLine(reader.ReadToEnd());
 
-            Console.WriteLine("Download Complete, status {0}", response.StatusDescription);
+            logger.Info("Download Complete, status {0}", response.StatusDescription);
 
             reader.Close();
             response.Close();
