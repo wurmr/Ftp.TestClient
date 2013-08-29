@@ -30,6 +30,7 @@ namespace Ftp.TestClient
             {
                 var sourceFileName = ConfigurationManager.AppSettings["SourceFile"];
                 var file = DownloadFile(sourceFileName);
+                if (file.Length == 0) throw new ApplicationException("Downloaded File Size is Zero");
 
                 var fileName = String.Format("{0}.{1}.txt", sourceFileName.Substring(0, sourceFileName.IndexOf('.')), DateTime.UtcNow.Ticks);
                 UploadFile(fileName, file);
