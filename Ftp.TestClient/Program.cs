@@ -14,11 +14,12 @@ namespace Ftp.TestClient
     class Program
     {
         static Logger logger = LogManager.GetCurrentClassLogger();
+        static Timer timer;  // prevent the timer from being GC'd
 
         static void Main(string[] args)
         {
             var testFrequencyInSeconds = int.Parse(ConfigurationManager.AppSettings["TestFrequencyInSeconds"]);
-            var timer = new System.Threading.Timer(Execute, null, TimeSpan.Zero, TimeSpan.FromSeconds(testFrequencyInSeconds));
+            timer = new System.Threading.Timer(Execute, null, TimeSpan.Zero, TimeSpan.FromSeconds(testFrequencyInSeconds));
 
             // Wait forever, the timer will handle everything else.
             (new ManualResetEventSlim()).Wait();
