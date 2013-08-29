@@ -14,29 +14,25 @@ namespace Ftp.TestClient
     class Program
     {
         static Logger logger = LogManager.GetCurrentClassLogger();
-        static Random random = new Random();
 
         static void Main(string[] args)
         {
             var testFrequencyInSeconds = int.Parse(ConfigurationManager.AppSettings["TestFrequencyInSeconds"]);
             var timer = new System.Threading.Timer(Execute, null, TimeSpan.Zero, TimeSpan.FromSeconds(testFrequencyInSeconds));
 
-            // Wait for input to exit.
-            Console.ReadLine();
+            // Wait forever, the timer will handle everything else.
+            (new ManualResetEventSlim()).Wait();
         }
 
         private static void Execute(object state)
         {
             try
             {
-                var file = DownloadFile("test.txt");
+                var sourceFileName = ConfigurationManager.AppSettings["SourceFile"];
+                var file = DownloadFile(sourceFileName);
 
-                // Copy the contents of the file to the request stream.
-                var sourceStream = new StreamReader(file);
-                var fileContents = Encoding.UTF8.GetBytes(sourceStream.ReadToEnd());
-                sourceStream.Close();
-                file.Close();
-                UploadFile(random.Next().ToString(), fileContents);
+                var fileName = String.Format("{0}.{1}.txt", sourceFileName.Substring(0, sourceFileName.IndexOf('.')), DateTime.UtcNow.Ticks);
+                UploadFile(fileName, file);
             }
             catch (Exception e)
             {
@@ -46,12 +42,14 @@ namespace Ftp.TestClient
 
         private static void UploadFile(string fileName, byte [] fileContents)
         {
+            logger.Info("Uploading file named {0}", fileName);
+
             var serverAddress = ConfigurationManager.AppSettings["FtpServerAddress"];
             var uploadDirectory = ConfigurationManager.AppSettings["UploadDirectory"];
 
             // Get the object used to communicate with the server.
             var request = (FtpWebRequest)WebRequest.Create(String.Format("{0}{1}/{2}", serverAddress, uploadDirectory, fileName));
-            request.Method = WebRequestMethods.Ftp.UploadFile;
+            request.Method = WebRequestMethods.Ftp.UploadFile;          
             request.KeepAlive = false;
             request.Credentials = new NetworkCredential(ConfigurationManager.AppSettings["FtpUserName"], ConfigurationManager.AppSettings["FtpPassword"]);
             
@@ -67,8 +65,9 @@ namespace Ftp.TestClient
             response.Close();
         }
 
-        private static Stream DownloadFile(string fileName)
+        private static byte [] DownloadFile(string fileName)
         {
+            logger.Info("Downloading file named {0}", fileName);
             var serverAddress = ConfigurationManager.AppSettings["FtpServerAddress"];
             var uploadDirectory = ConfigurationManager.AppSettings["DownloadDirectory"];
 
@@ -83,12 +82,12 @@ namespace Ftp.TestClient
             var memoryStream = new MemoryStream();
             responseStream.CopyTo(memoryStream);
 
-
             logger.Info("Download Complete, status {0}", response.StatusDescription);
 
             response.Close();
-
-            return memoryStream;
+            var fileContents = memoryStream.ToArray();
+            memoryStream.Close();
+            return fileContents;
         }
     }
 }
