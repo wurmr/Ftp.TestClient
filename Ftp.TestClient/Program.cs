@@ -20,21 +20,37 @@ namespace Ftp.TestClient
         {
             var testFrequencyInSeconds = int.Parse(ConfigurationManager.AppSettings["TestFrequencyInSeconds"]);
             timer = new System.Threading.Timer(Execute, null, TimeSpan.Zero, TimeSpan.FromSeconds(testFrequencyInSeconds));
-
             // Wait forever, the timer will handle everything else.
             (new ManualResetEventSlim()).Wait();
         }
 
         private static void Execute(object state)
         {
+            var parallelOptions = new ParallelOptions();
+
+            parallelOptions.MaxDegreeOfParallelism = ConfigurationManager.AppSettings["Load:MultiThreaded"] == "true" ? -1 : 1;
+
             try
             {
                 var sourceFileName = ConfigurationManager.AppSettings["SourceFile"];
-                var file = DownloadFile(sourceFileName);
-                if (file.Length == 0) throw new ApplicationException("Downloaded File Size is Zero");
+                byte[] file = null;
 
-                var fileName = String.Format("{0}.{1}.txt", sourceFileName.Substring(0, sourceFileName.IndexOf('.')), DateTime.UtcNow.Ticks);
-                UploadFile(fileName, file);
+                Parallel.For(0, int.Parse(ConfigurationManager.AppSettings["Load:Download"]), parallelOptions, (int i) =>
+                {
+
+                    //for (int i = 0; i < int.Parse(ConfigurationManager.AppSettings["Load:Download"]); i++)
+                    //{
+                    file = DownloadFile(sourceFileName);
+                    if (file.Length == 0) throw new ApplicationException("Downloaded File Size is Zero");
+                });
+
+                Parallel.For(0, int.Parse(ConfigurationManager.AppSettings["Load:Upload"]), parallelOptions, (int i) =>
+                {
+                    //for (int i = 0; i < int.Parse(ConfigurationManager.AppSettings["Load:Upload"]); i++)
+                    //{
+                    var fileName = String.Format("{0}.{2}.{1}.txt", sourceFileName.Substring(0, sourceFileName.IndexOf('.')), DateTime.UtcNow.Ticks, Thread.CurrentThread.ManagedThreadId);
+                    UploadFile(fileName, file);
+                });             
             }
             catch (Exception e)
             {
