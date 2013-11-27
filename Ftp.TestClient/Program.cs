@@ -38,18 +38,19 @@ namespace Ftp.TestClient
                 Parallel.For(0, int.Parse(ConfigurationManager.AppSettings["Load:Download"]), parallelOptions, (int i) =>
                 {
 
-                    //for (int i = 0; i < int.Parse(ConfigurationManager.AppSettings["Load:Download"]); i++)
-                    //{
                     file = DownloadFile(sourceFileName);
                     if (file.Length == 0) throw new ApplicationException("Downloaded File Size is Zero");
                 });
 
                 Parallel.For(0, int.Parse(ConfigurationManager.AppSettings["Load:Upload"]), parallelOptions, (int i) =>
                 {
-                    //for (int i = 0; i < int.Parse(ConfigurationManager.AppSettings["Load:Upload"]); i++)
-                    //{
                     var fileName = String.Format("{0}.{2}.{1}.txt", sourceFileName.Substring(0, sourceFileName.IndexOf('.')), DateTime.UtcNow.Ticks, Thread.CurrentThread.ManagedThreadId);
                     UploadFile(fileName, file);
+
+                    if (ConfigurationManager.AppSettings["Behavior:DeleteFilesAfterUpload"] == "true")
+                    {
+                        DeleteFile(fileName);
+                    }
                 });             
             }
             catch (Exception e)
@@ -80,6 +81,24 @@ namespace Ftp.TestClient
             FtpWebResponse response = (FtpWebResponse)request.GetResponse();
     
             logger.Info("Upload File Complete, status {0}", response.StatusDescription);
+            response.Close();
+        }
+
+        private static void DeleteFile(string fileName)
+        {
+            logger.Info("Deleting file named {0}", fileName);
+            var serverAddress = ConfigurationManager.AppSettings["FtpServerAddress"];
+            var uploadDirectory = ConfigurationManager.AppSettings["UploadDirectory"];
+
+            // Get the object used to communicate with the server.
+            var request = (FtpWebRequest)WebRequest.Create(String.Format("{0}{1}/{2}", serverAddress, uploadDirectory, fileName));
+            request.Method = WebRequestMethods.Ftp.DeleteFile;
+            request.KeepAlive = false;
+            request.Credentials = new NetworkCredential(ConfigurationManager.AppSettings["FtpUserName"], ConfigurationManager.AppSettings["FtpPassword"]);
+            var response = (FtpWebResponse)request.GetResponse();
+
+            logger.Info("Delete Complete, status {0}", response.StatusDescription);
+
             response.Close();
         }
 
